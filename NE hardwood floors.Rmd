@@ -62,8 +62,8 @@ for(i in seq_along(storePageUrlsVector)){
 #create holder tibble for page data      
  pageDataTibble <- tibble(
       Name = storeName,
-      Address = contactInfo |> 
-        html_element(".dtm-address") |> 
+      Address = storeProfile |> 
+        html_element(".dtm-address dd") |> 
         html_text2(), #not all stores have street addresses
      contactPerson = storeProfile |> 
         html_element(".bds-body+ .e62xhj40 span") |> 
