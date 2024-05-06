@@ -1,0 +1,86 @@
+---
+title: "NE hardwood floors"
+author: "Paul Pryse"
+date: "2024-04-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load libraries
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+Scrape htmls from results pages
+set to scrape two pages for 30 total results
+```{r}
+storePageUrls <- data.frame()
+
+for (i in seq(from = 1, to = 2, by = 1)) {
+urlloop <- paste0("https://www.bbb.org/search?city=omaha&find_country=USA&find_entity=10058-000&find_id=205_10058-000_alias&find_latlng=41.245472%2C-96.027732&find_loc=Omaha%2C%20NE&find_text=floor%20hardwood&find_type=Category&page=", i, "&sort=Distance&state=ne")
+
+html <- read_html(urlloop)
+
+resultPageUrls <- html %>% 
+  html_nodes("a.text-blue-medium.css-1jw2l11.eou9tt70") %>%
+  html_attr("href")
+
+holder <- data.frame(resultPageUrls)
+
+storePageUrls <- bind_rows(storePageUrls, holder)
+
+Sys.sleep(5)
+}
+```
+
+Looped scape of store page urls
+```{r}
+allStores <-data.frame()
+
+#turn data frame of URLS into a vector
+storePageUrlsVector = storePageUrls[['resultPageUrls']]
+
+for(i in seq_along(storePageUrlsVector)){
+  html <- read_html(storePageUrlsVector[i])
+
+#scrape store name 
+  storeName <- html %>% 
+  html_elements("span.bds-h2.font-normal.text-black") %>% 
+  html_text()
+   
+#identify store profile box
+  storeProfile <- html %>%  html_elements("div.css-64ty4u.e5hddx43")
+  
+#identify contact info box
+  contactInfo <- html %>% 
+    html_elements(".dtm-contact")
+ 
+#create holder tibble for page data      
+ pageDataTibble <- tibble(
+      Name = storeName,
+      Address = contactInfo |> 
+        html_element(".dtm-address") |> 
+        html_text2(), #not all stores have street addresses
+     contactPerson = storeProfile |> 
+        html_element(".bds-body+ .e62xhj40 span") |> 
+        html_text2(),
+     phone = contactInfo |>
+       html_element(".dtm-phone") |>
+       html_text2()
+)
+ 
+#bind data from successive pages in data frame
+allStores <- bind_rows(allStores, pageDataTibble)
+     
+Sys.sleep(8)
+     }
+```
+
+Write the CSV
+```{r}
+write.csv(nameOfTable, "fileName.csv")
+```
